@@ -1,12 +1,12 @@
-## DEPRECATED: electron-compile
+## (Unofficially) UNDEPRECATED: electron-compile
 
-[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+[![Unofficially Maintained](https://img.shields.io/badge/Unofficially%20Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 
-This project is no longer maintained, pull requests are no longer being reviewed or merged and issues are no longer being responded to. 
+This project is now (unofficially) maintained by Lane Shaw, new pull requests will be reviewed (as time permits) or merged and new issues can be reported here.
 
 ---
 
-![](https://img.shields.io/npm/dm/electron-compile.svg) <a href="http://electron.github.io/electron-compile/docs">![](http://electron.github.io/electron-compile/docs/badge.svg)</a>
+<a href="http://electron.github.io/electron-compile/docs">![GitHub package.json version](https://img.shields.io/github/package-json/v/LanetheGreat/electron-compile)</a>
 
 electron-compile compiles JS and CSS on the fly with a single call in your app's 'ready' function.
 
@@ -34,9 +34,9 @@ For JSON:
 
 ### How does it work? (Easiest Way)
 
-Install `electron-prebuilt-compile` instead of the `electron`:
+Install `@lanethegreat/electron-prebuilt-compile` instead of the normal `electron` package:
 ```sh
-npm install electron-prebuilt-compile --save-dev
+npm install @lanethegreat/electron-prebuilt-compile --save-dev
 ```
 and keep using electron as usual.
 
@@ -44,15 +44,15 @@ Tada! You did it!
 
 ### Wait, seriously?
 
-Yeah. `electron-prebuilt-compile` is like an `electron` that Just Works with all of these languages above.
+Yeah. `@lanethegreat/electron-prebuilt-compile` is like `electron` that Just Works with all of these languages above.
 
 ### How does it work? (Slightly Harder Way)
 
-First, add `electron-compile` and `electron-compilers` as a `devDependency`.
+First, add `@lanethegreat/electron-compile` and `@lanethegreat/electron-compilers` as a `devDependency`.
 
 ```sh
-npm install --save electron-compile
-npm install --save-dev electron-compilers
+npm install --save @lanethegreat/electron-compile
+npm install --save-dev @lanethegreat/electron-compilers
 ```
 
 Create a new file that will be the entry point of your app (perhaps changing 'main' in package.json) - you need to pass in the root directory of your application, which will vary based on your setup. The root directory is the directory that your `package.json` is in.
@@ -87,7 +87,7 @@ require('./mylib')   // mylib.ts
 In your main file, before you create a `BrowserWindow` instance:
 
 ```js
-import {enableLiveReload} from 'electron-compile';
+import {enableLiveReload} from '@lanethegreat/electron-compile';
 
 enableLiveReload();
 ```
@@ -195,7 +195,7 @@ If you've got a `.babelrc` and that's all you want to customize, you can simply 
 The opening Object is a list of MIME Types, and options passed to the compiler implementation. These parameters are documented here:
 
 * Babel - http://babeljs.io/docs/usage/options
-* CoffeeScript - https://web.archive.org/web/20160110101607/http://coffeescript.org/documentation/docs/coffee-script.html#section-5
+* CoffeeScript - https://coffeescript.org/v1/annotated-source/coffee-script.html#section-5
 * TypeScript - https://github.com/Microsoft/TypeScript/blob/v1.5.0-beta/bin/typescriptServices.d.ts#L1076
 * Less - http://lesscss.org/usage/index.html#command-line-usage-options
 * Jade - http://jade-lang.com/api
