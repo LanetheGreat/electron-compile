@@ -205,7 +205,7 @@ describe('The file changed cache', function() {
   });
 
   it("Successfully finds if a file is in node_modules", async function() {
-    let input = path.join(__dirname, '..', 'node_modules', 'electron-compilers', 'package.json');
+    let input = path.join(__dirname, '..', 'node_modules', '@lanethegreat/electron-compilers', 'package.json');
     let result = await this.fixture.getHashForPath(input);
 
     expect(result.isInNodeModules).to.be.ok;

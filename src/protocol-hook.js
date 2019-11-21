@@ -10,7 +10,7 @@ const magicWords = "__magic__file__to__help__electron__compile.js";
 const magicGlobalForRootCacheDir = '__electron_compile_root_cache_dir';
 const magicGlobalForAppRootDir = '__electron_compile_app_root_dir';
 
-const d = require('debug')('electron-compile:protocol-hook');
+const d = require('debug')('@lanethegreat/electron-compile:protocol-hook');
 
 let protocol = null;
 
@@ -106,7 +106,7 @@ export function initializeProtocolHook(compilerHost) {
   global[magicGlobalForRootCacheDir] = compilerHost.rootCacheDir;
   global[magicGlobalForAppRootDir] = compilerHost.appRoot;
 
-  const electronCompileSetupCode = `if (window.require) require('electron-compile/lib/initialize-renderer').initializeRendererProcess(${compilerHost.readOnlyMode});`;
+  const electronCompileSetupCode = `if (window.require) require('@lanethegreat/electron-compile/lib/initialize-renderer').initializeRendererProcess(${compilerHost.readOnlyMode});`;
 
   protocol.interceptBufferProtocol('file', async function(request, finish) {
     let uri = url.parse(request.url);

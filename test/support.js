@@ -1,4 +1,4 @@
-const allCompilerClasses = require('electron-compilers');
+const allCompilerClasses = require('@lanethegreat/electron-compilers');
 
 let chai = require("chai");
 let chaiAsPromised = require("chai-as-promised");

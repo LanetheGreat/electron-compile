@@ -2,7 +2,7 @@ import mimeTypes from '@paulcbetts/mime-types';
 
 let HMR = false;
 
-const d = require('debug')('electron-compile:require-hook');
+const d = require('debug')('@lanethegreat/electron-compile:require-hook');
 let electron = null;
 
 if (process.type === 'renderer') {

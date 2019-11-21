@@ -10,7 +10,7 @@ import FileChangedCache from './file-change-cache';
 import ReadOnlyCompiler from './read-only-compiler';
 import {listen, send} from './browser-signal';
 
-const d = require('debug')('electron-compile:compiler-host');
+const d = require('debug')('@lanethegreat/electron-compile:compiler-host');
 
 import 'rxjs/add/operator/map';
 

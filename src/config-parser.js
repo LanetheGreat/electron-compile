@@ -8,7 +8,7 @@ import FileChangedCache from './file-change-cache';
 import CompilerHost from './compiler-host';
 import registerRequireExtension from './require-hook';
 
-const d = require('debug')('electron-compile:config-parser');
+const d = require('debug')('@lanethegreat/electron-compile:config-parser');
 
 // NB: We intentionally delay-load this so that in production, you can create
 // cache-only versions of these compilers
@@ -421,11 +421,11 @@ export function getDefaultConfiguration(rootDir) {
  */
 export function createCompilers() {
   if (!allCompilerClasses) {
-    // First we want to see if electron-compilers itself has been installed with
+    // First we want to see if @lanethegreat/electron-compilers itself has been installed with
     // devDependencies. If that's not the case, check to see if
-    // electron-compilers is installed as a peer dependency (probably as a
+    // @lanethegreat/electron-compilers is installed as a peer dependency (probably as a
     // devDependency of the root project).
-    const locations = ['electron-compilers', '../../electron-compilers'];
+    const locations = ['@lanethegreat/electron-compilers', '../../@lanethegreat/electron-compilers'];
 
     for (let location of locations) {
       try {

@@ -12,7 +12,7 @@
   "package": "./package.json",
   "coverage": true,
   "includeSource": true,
-  "title": "electron-compilers",
+  "title": "@lanethegreat/electron-compilers",
   "plugins": [
     {"name": "esdoc-es7-plugin"},
     {"name": "esdoc-plugin-async-to-sync"}
