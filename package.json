@@ -46,7 +46,7 @@
     "yargs": "^4.8.1"
   },
   "devDependencies": {
-    "@lanethegreat/electron-compilers": "^5.9.1",
+    "@lanethegreat/electron-compilers": "^5.9.2",
     "asar": "^0.12.1",
     "babel-cli": "^6.11.4",
     "babel-eslint": "^6.1.2",
