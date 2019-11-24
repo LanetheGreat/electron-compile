@@ -26,6 +26,7 @@ For CSS:
 For HTML:
 
 * Jade
+* Pug (2.0)
 * Vue.js 2.0 Single-File Components
 
 For JSON:
@@ -199,6 +200,7 @@ The opening Object is a list of MIME Types, and options passed to the compiler i
 * TypeScript - https://github.com/Microsoft/TypeScript/blob/v1.5.0-beta/bin/typescriptServices.d.ts#L1076
 * Less - http://lesscss.org/usage/index.html#command-line-usage-options
 * Jade - http://jade-lang.com/api
+* Pug - https://pugjs.org/api/reference.html
 
 ## How can I compile only some file types but not others?
 

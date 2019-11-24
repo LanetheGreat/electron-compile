@@ -414,7 +414,7 @@ export function getDefaultConfiguration(rootDir) {
 /**
  * Allows you to create new instances of all compilers that are supported by
  * electron-compile and use them directly. Currently supports Babel, CoffeeScript,
- * TypeScript, Less, and Jade.
+ * TypeScript, Less, and Jade/Pug.
  *
  * @return {Object}  An Object whose Keys are MIME types, and whose values
  * are instances of @{link CompilerBase}.

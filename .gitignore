@@ -31,3 +31,7 @@ node_modules
 /docs
 
 .DS_Store
+
+# Eclipse related files
+/.project
+/.settings
