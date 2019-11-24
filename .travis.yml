@@ -29,7 +29,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew cask install wine-stable; fi
 
 install:
-  - npm i -g npm
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then npm i -g npm; fi
   - npm install
 
 before_script:
