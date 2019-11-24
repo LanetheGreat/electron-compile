@@ -1,6 +1,6 @@
 {
   "name": "@lanethegreat/electron-compile",
-  "version": "7.0.0-beta.0",
+  "version": "7.0.0-beta.1",
   "description": "Electron supporting package to compile JS and CSS in Electron applications",
   "scripts": {
     "doc": "esdoc -c ./esdoc.json",
@@ -54,7 +54,7 @@
     "@babel/preset-env": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
     "@babel/register": "^7.0.0",
-    "@lanethegreat/electron-compilers": "6.0.0-beta.0",
+    "@lanethegreat/electron-compilers": "6.0.0-beta.1",
     "asar": "^0.12.1",
     "babel-eslint": "^6.1.2",
     "babel-plugin-array-includes": "^2.0.3",
