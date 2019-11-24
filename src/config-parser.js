@@ -404,7 +404,7 @@ export function getDefaultConfiguration(rootDir) {
             "electron": getElectronVersion(rootDir)
           }
         }],
-        "react"
+        "@babel/preset-react"
       ],
       "sourceMaps": "inline"
     }

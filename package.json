@@ -7,8 +7,8 @@
     "compile": "cross-env NODE_ENV='production' git clean -xdf lib && babel -d lib/ src",
     "prepare": "npm run compile",
     "start": "npm run compile && electron ./test-dist/electron-smoke-test.js",
-    "test": "mocha --compilers js:babel-register test/*.js",
-    "test-cov": "cross-env NODE_ENV='test' istanbul cover ./node_modules/mocha/bin/_mocha -- --compilers js:babel-register test/*.js"
+    "test": "mocha --compilers js:@babel/register test/*.js",
+    "test-cov": "cross-env NODE_ENV='test' istanbul cover ./node_modules/mocha/bin/_mocha -- --compilers js:@babel/register test/*.js"
   },
   "bin": {
     "electron-compile": "lib/cli.js",
@@ -33,6 +33,7 @@
     "node": ">= 5.0"
   },
   "dependencies": {
+    "@babel/runtime": "^7.0.0",
     "@paulcbetts/mime-types": "^2.1.10",
     "@types/node": "^7.0.12",
     "btoa": "^1.1.2",
@@ -46,16 +47,18 @@
     "yargs": "^4.8.1"
   },
   "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/plugin-transform-async-to-generator": "^7.0.0",
+    "@babel/plugin-transform-runtime": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/register": "^7.0.0",
     "@lanethegreat/electron-compilers": "^5.9.2",
     "asar": "^0.12.1",
-    "babel-cli": "^6.11.4",
     "babel-eslint": "^6.1.2",
     "babel-plugin-array-includes": "^2.0.3",
     "babel-plugin-istanbul": "^4.0.0",
-    "babel-plugin-transform-async-to-generator": "^6.8.0",
-    "babel-preset-es2016-node5": "^1.1.2",
-    "babel-preset-react": "^6.11.1",
-    "babel-register": "^6.11.6",
     "chai": "^3.5.0",
     "chai-as-promised": "^5.3.0",
     "cheerio": "^0.20.0",

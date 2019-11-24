@@ -103,8 +103,8 @@ If you are using React, you can also enable Hot Module Reloading for both JavaSc
 ```json
 {
   "application/javascript": {
-    "presets": ["react", "es2017-node7"],
-    "plugins": ["react-hot-loader/babel", "transform-async-to-generator"]
+    "presets": ["@babel/preset-react", "@babel/preset-env"],
+    "plugins": ["react-hot-loader/babel", "@babel/plugin-transform-async-to-generator"]
   }
 }
 ```
@@ -159,7 +159,7 @@ If you've got a `.babelrc` and that's all you want to customize, you can simply 
 ```json
 {
   "application/javascript": {
-    "presets": ["es2016-node5", "react"],
+    "presets": ["@babel/preset-env", "@babel/preset-react"],
     "sourceMaps": "inline"
   },
   "text/less": {
@@ -175,7 +175,7 @@ If you've got a `.babelrc` and that's all you want to customize, you can simply 
   "env": {
     "development": {
       "application/javascript": {
-        "presets": ["es2016-node5", "react"],
+        "presets": ["@babel/preset-env", "@babel/preset-react"],
         "sourceMaps": "inline"
       },
       "text/less": {
@@ -184,7 +184,7 @@ If you've got a `.babelrc` and that's all you want to customize, you can simply 
     },
     "production": {
       "application/javascript": {
-        "presets": ["es2016-node5", "react"],
+        "presets": ["@babel/preset-env", "@babel/preset-react"],
         "sourceMaps": "none"
       }
     }
