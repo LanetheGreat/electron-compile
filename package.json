@@ -30,7 +30,7 @@
   "main": "lib/index.js",
   "types": "types/index.d.ts",
   "engines": {
-    "node": ">= 5.0"
+    "node": ">= 6.0"
   },
   "dependencies": {
     "@babel/runtime": "^7.0.0",
