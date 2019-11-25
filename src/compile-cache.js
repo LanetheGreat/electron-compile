@@ -162,7 +162,7 @@ export default class CompileCache {
       buf = await pzlib.gzip(codeOrBinaryData);
       await pfs.writeFile(target + '.info', JSON.stringify({mimeType, dependentFiles}), 'utf8');
     } else {
-      buf = await pzlib.gzip(new Buffer(JSON.stringify({code: codeOrBinaryData, mimeType, dependentFiles})));
+      buf = await pzlib.gzip(Buffer.from(JSON.stringify({code: codeOrBinaryData, mimeType, dependentFiles})));
     }
 
     await pfs.writeFile(target, buf);
@@ -289,7 +289,7 @@ export default class CompileCache {
       buf = zlib.gzipSync(codeOrBinaryData);
       fs.writeFileSync(target + '.info', JSON.stringify({mimeType, dependentFiles}), 'utf8');
     } else {
-      buf = zlib.gzipSync(new Buffer(JSON.stringify({code: codeOrBinaryData, mimeType, dependentFiles})));
+      buf = zlib.gzipSync(Buffer.from(JSON.stringify({code: codeOrBinaryData, mimeType, dependentFiles})));
     }
 
     fs.writeFileSync(target, buf);

@@ -200,7 +200,7 @@ export default class CompilerHost {
     };
 
     let target = path.join(this.rootCacheDir, 'compiler-info.json.gz');
-    let buf = await pzlib.gzip(new Buffer(JSON.stringify(info)));
+    let buf = await pzlib.gzip(Buffer.from(JSON.stringify(info)));
     await pfs.writeFile(target, buf);
   }
 
@@ -476,7 +476,7 @@ export default class CompilerHost {
     };
 
     let target = path.join(this.rootCacheDir, 'compiler-info.json.gz');
-    let buf = zlib.gzipSync(new Buffer(JSON.stringify(info)));
+    let buf = zlib.gzipSync(Buffer.from(JSON.stringify(info)));
     fs.writeFileSync(target, buf);
   }
 

@@ -214,7 +214,7 @@ export default class FileChangedCache {
   async save(filePath) {
     let toSave = this.getSavedData();
 
-    let buf = await pzlib.gzip(new Buffer(JSON.stringify(toSave)));
+    let buf = await pzlib.gzip(Buffer.from(JSON.stringify(toSave)));
     await pfs.writeFile(filePath, buf);
   }
 
@@ -295,7 +295,7 @@ export default class FileChangedCache {
   saveSync(filePath) {
     let toSave = this.getSavedData();
 
-    let buf = zlib.gzipSync(new Buffer(JSON.stringify(toSave)));
+    let buf = zlib.gzipSync(Buffer.from(JSON.stringify(toSave)));
     fs.writeFileSync(filePath, buf);
   }
 
@@ -376,7 +376,7 @@ export default class FileChangedCache {
     let encoding;
     if (buffer.length <= 128) {
       encoding = encodings.find(x =>
-        Buffer.compare(new Buffer(buffer.toString(), x), buffer) === 0
+        Buffer.compare(Buffer.from(buffer.toString(), x), buffer) === 0
       );
     } else {
       encoding = encodings.find(x => !FileChangedCache.containsControlCharacters(buf.toString(x)));

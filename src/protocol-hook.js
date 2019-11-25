@@ -115,7 +115,7 @@ export function initializeProtocolHook(compilerHost) {
     if (request.url.indexOf(magicWords) > -1) {
       finish({
         mimeType: 'application/javascript',
-        data: new Buffer(electronCompileSetupCode, 'utf8')
+        data: Buffer.from(electronCompileSetupCode, 'utf8')
       });
 
       return;
@@ -156,7 +156,7 @@ export function initializeProtocolHook(compilerHost) {
           }
 
           riggedContents = rigHtmlDocumentToInitializeElectronCompile(contents);
-          finish({ data: new Buffer(riggedContents), mimeType: 'text/html' });
+          finish({ data: Buffer.from(riggedContents), mimeType: 'text/html' });
           return;
         });
 
@@ -172,7 +172,7 @@ export function initializeProtocolHook(compilerHost) {
     // relative to the HTML file. Since we can't really figure out what the
     // real path is, we just need to squelch it.
     if (filePath.match(/\.map$/i) && !(await doesMapFileExist(filePath))) {
-      finish({ data: new Buffer("", 'utf8'), mimeType: 'text/plain' });
+      finish({ data: Buffer.from("", 'utf8'), mimeType: 'text/plain' });
       return;
     }
 
@@ -195,7 +195,7 @@ export function initializeProtocolHook(compilerHost) {
         finish({ data: result.binaryData || result.code, mimeType: result.mimeType });
         return;
       } else {
-        finish({ data: new Buffer(result.code), mimeType: result.mimeType });
+        finish({ data: Buffer.from(result.code), mimeType: result.mimeType });
         return;
       }
     } catch (e) {
@@ -207,7 +207,7 @@ export function initializeProtocolHook(compilerHost) {
         return;
       }
 
-      finish({ mimeType: 'text/plain', data: new Buffer(err) });
+      finish({ mimeType: 'text/plain', data: Buffer.from(err) });
       return;
     }
   });
