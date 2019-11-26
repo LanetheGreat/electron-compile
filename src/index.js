@@ -18,17 +18,18 @@ fs.statSyncNoException = fs.statSyncNoException || ((...args) => {
 let enableLiveReload = null;
 let watchPath = null;
 
-module.exports = Object.assign({
+module.exports = Object.assign(
+  {
   // NB: delay-load live-reload so we don't load RxJS in production
-  enableLiveReload: function(...args) {
-    enableLiveReload = enableLiveReload || require('./live-reload').enableLiveReload;
-    return enableLiveReload(...args);
+    enableLiveReload: function(...args) {
+      enableLiveReload = enableLiveReload || require('./live-reload').enableLiveReload;
+      return enableLiveReload(...args);
+    },
+    watchPath: function(...args) {
+      watchPath = watchPath || require('./pathwatcher-rx').watchPath;
+      return watchPath(...args);
+    },
   },
-  watchPath: function(...args) {
-    watchPath = watchPath || require('./pathwatcher-rx').watchPath;
-    return watchPath(...args);
-  },
-},
   configParser,
   { CompilerHost, FileChangedCache, CompileCache, addBypassChecker }
 );

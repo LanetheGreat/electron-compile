@@ -281,7 +281,7 @@ export function createCompilerHostFromBabelRcSync(file, rootCacheDir=null, sourc
 
   // Are we still package.json (i.e. is there no babel info whatsoever?)
   if ('name' in info && 'version' in info) {
-    let appRoot = path.dirname(file)
+    let appRoot = path.dirname(file);
     return createCompilerHostFromConfiguration({
       appRoot: appRoot,
       options: getDefaultConfiguration(appRoot),

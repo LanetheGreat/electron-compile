@@ -16,7 +16,7 @@ if (process.type === 'renderer') {
 
       // Reset the module cache
       let cache = require('module')._cache;
-      let toEject = Object.keys(cache).filter(x => x && !x.match(/[\\\/](node_modules|.*\.asar)[\\\/]/i));
+      let toEject = Object.keys(cache).filter(x => x && !x.match(/[\\/](node_modules|.*\.asar)[\\/]/i));
       toEject.forEach(x => {
         d(`Removing node module entry for ${x}`);
         delete cache[x];

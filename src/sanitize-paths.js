@@ -32,7 +32,7 @@ export default function sanitizeFilePath(file) {
   // post-resolved one. We need to handle both.
 
   let realFile = null;
-  let parts = file.split(/[\\\/]app.asar[\\\/]/);
+  let parts = file.split(/[\\/]app.asar[\\/]/);
   if (!parts[1]) {
     // Not using an ASAR archive
     realFile = cachedRealpath(file);
@@ -42,5 +42,5 @@ export default function sanitizeFilePath(file) {
     realFile = `${cachedRealpath(parts[0])}/app.asar/${parts[1]}`;
   }
 
-  return realFile.replace(/[\\\/]/g, '/');
+  return realFile.replace(/[\\/]/g, '/');
 }
