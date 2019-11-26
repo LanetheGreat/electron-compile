@@ -12,7 +12,7 @@ import {listen, send} from './browser-signal';
 
 const d = require('debug')('@lanethegreat/electron-compile:compiler-host');
 
-import 'rxjs/add/operator/map';
+import { map } from 'rxjs/operators';
 
 require('./rig-mime-types').init();
 
@@ -402,7 +402,9 @@ export default class CompilerHost {
   }
 
   listenToCompileEvents() {
-    return listen('electron-compile-compiled-file').map(([x]) => x);
+    return listen('electron-compile-compiled-file').pipe(
+      map(([x]) => x)
+    );
   }
 
   /*

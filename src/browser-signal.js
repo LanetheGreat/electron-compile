@@ -1,7 +1,4 @@
-import {Observable} from 'rxjs/Observable';
-import {Subject} from 'rxjs/Subject';
-
-import 'rxjs/add/observable/throw';
+import { Observable, Subject, throwError } from 'rxjs';
 
 const isElectron = 'type' in process;
 const isBrowser = process.type === 'browser';
@@ -24,7 +21,7 @@ export function send(channel, ...args) {
 }
 
 export function listen(channel) {
-  if (isElectron && !isBrowser) return Observable.throw(new Error("Can only call listen from browser"));
+  if (isElectron && !isBrowser) return throwError(new Error("Can only call listen from browser"));
 
   return Observable.create((s) => {
     if (!(channel in channelList)) {
