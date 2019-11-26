@@ -2,7 +2,7 @@ import fs from 'fs';
 import LRUCache from 'lru-cache';
 
 const d = require('debug')('@lanethegreat/electron-compile:sanitize-paths');
-const realpathCache = LRUCache({ max: 1024 });
+const realpathCache = new LRUCache({ max: 1024 });
 
 function cachedRealpath(p) {
   let ret = realpathCache.get(p);
