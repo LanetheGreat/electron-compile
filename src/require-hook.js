@@ -34,6 +34,8 @@ if (process.type === 'renderer') {
  * code that Electron loads.
  *
  * @param  {CompilerHost} compilerHost  The compiler host to use for compilation.
+ * @param  {boolean} isProduction  Decides whether to use the read-only production 
+ *                                 compiler cache or development compiler cache.
  */
 export default function registerRequireExtension(compilerHost, isProduction) {
   if (HMR) {

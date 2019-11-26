@@ -33,6 +33,8 @@ function statSyncNoException(fsPath) {
  * init instead of directly
  *
  * @param {CompilerHost} compilerHost  The compiler host to use.
+ * @param {boolean} isProduction  Decides whether to use the read-only production 
+ *                                compiler cache or development compiler cache.
  *
  */
 export function initializeGlobalHooks(compilerHost, isProduction=false) {
@@ -159,8 +161,8 @@ export function createCompilerHostFromConfiguration(info) {
  * from {@link createCompilerHostFromProjectRoot} instead of used directly.
  *
  * @param  {string} file  The path to a .babelrc file
- *
  * @param  {string} rootCacheDir (optional)  The directory to use as a cache.
+ * @param  {string} sourceMapPath (optional)  The directory to store source maps in.
  *
  * @return {Promise<CompilerHost>}  A set-up compiler host
  */
@@ -204,8 +206,8 @@ export async function createCompilerHostFromBabelRc(file, rootCacheDir=null, sou
  * from {@link createCompilerHostFromProjectRoot} instead of used directly.
  *
  * @param  {string} file  The path to a .compilerc file
- *
  * @param  {string} rootCacheDir (optional)  The directory to use as a cache.
+ * @param  {string} sourceMapPath (optional)  The directory to store source maps in.
  *
  * @return {Promise<CompilerHost>}  A set-up compiler host
  */

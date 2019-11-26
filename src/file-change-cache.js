@@ -181,6 +181,7 @@ export default class FileChangedCache {
    *
    * @param  {string} absoluteFilePath  The path to a file to retrieve info on.
    * @param  {Object} cacheEntry  Cache data from {@link getCacheEntryForPath}
+   * @param  {Object} fileHashInfo  File stat info from {@link getInfoForCacheEntry}
    *
    * @return {boolean}
    */
