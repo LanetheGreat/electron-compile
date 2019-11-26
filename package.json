@@ -30,12 +30,12 @@
   "main": "lib/index.js",
   "types": "types/index.d.ts",
   "engines": {
-    "node": ">= 6.0"
+    "node": ">= 8.0"
   },
   "dependencies": {
     "@babel/runtime": "^7.0.0",
     "@paulcbetts/mime-types": "^2.1.10",
-    "@types/node": "^7.0.12",
+    "@types/node": "^8.0.0",
     "btoa": "^1.1.2",
     "debug": "^2.5.1",
     "lru-cache": "^4.0.1",

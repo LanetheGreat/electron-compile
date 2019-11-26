@@ -5,9 +5,11 @@ src/
 .babelrc
 .editorconfig
 .eslintrc
+.gitattributes
 .jshintrc
 .npmignore
 .travis.yml
 *.md
 esdoc.json
 /.project
+/.settings
