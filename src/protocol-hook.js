@@ -109,7 +109,7 @@ export function initializeProtocolHook(compilerHost) {
   const electronCompileSetupCode = `if (window.require) require('@lanethegreat/electron-compile/lib/initialize-renderer').initializeRendererProcess(${compilerHost.readOnlyMode});`;
 
   protocol.interceptBufferProtocol('file', async function(request, finish) {
-    let uri = url.parse(request.url);
+    let uri = url.parse(request.url, true);
 
     d(`Intercepting url ${request.url}`);
     if (request.url.indexOf(magicWords) > -1) {
@@ -132,6 +132,13 @@ export function initializeProtocolHook(compilerHost) {
     }
 
     let filePath = decodeURIComponent(uri.pathname);
+
+    // Check if requested .css files need to be transpiled from another source file.
+    // Electron (or the V8 engine) does not permit loading of stylesheet files ending in
+    // anything other than '.css'
+    if (uri.query && uri.query['_useExt']) {
+      filePath = filePath.replace(/\.css$/i, `.${uri.query['_useExt']}`);
+    }
 
     // NB: pathname has a leading '/' on Win32 for some reason
     if (process.platform === 'win32') {

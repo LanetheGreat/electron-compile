@@ -246,3 +246,23 @@ electron-compile --appDir /path/to/my/app ./src ./static
 ### But I use Grunt / Gulp / I want to do Something Interesting
 
 Compilation also has its own API, check out the [documentation](http://electron-userland.github.io/electron-compile/docs/) for more information.
+
+## Known Issues/Questions
+
+### "[Deprecation] CSS cannot be loaded from \`file:\` URLs unless they end in a \`.css\` file extension" LESS/SASS/SCSS error.
+
+It's known that back around Electron v3, Chromium deprecated using files in <link> tags without the ".css" extension. To combat this, electron-compile now supports the use of `_useExt` in the query string for stylesheets to remap the file extension to the LESS/SASS/SCSS file extension when compiling files. So instead of:
+```html
+  <head>
+    <title>Example HTML Page</title>
+    <link rel="stylesheet" href="css/index.sass" />
+  </head>
+```
+You would do this instead to remap to the correct file extension, using .css on the original filename:
+```html
+  <head>
+    <title>Example HTML Page</title>
+    <link rel="stylesheet" href="css/index.css?_useExt=sass" />
+  </head>
+```
+Credit to user [Martin Koch](https://github.com/carlrabbit) for this suggestion in the original [PR #319](https://github.com/electron-userland/electron-compile/pull/319)
