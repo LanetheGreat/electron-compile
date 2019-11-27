@@ -37,5 +37,6 @@ export default (() => {
     }
   });
 
-  return document.registerElement('x-require', { prototype: proto });
+  customElements.define('x-require', proto.constructor);
+  return proto.constructor;
 })();
