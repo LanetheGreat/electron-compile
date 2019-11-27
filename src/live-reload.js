@@ -1,6 +1,6 @@
 import FileChangedCache from './file-change-cache';
 import {watchPath} from './pathwatcher-rx';
-import { defer, empty, fromPromise } from 'rxjs';
+import { defer, from, EMPTY } from 'rxjs';
 import { catchError, filter, map, mergeMap, switchMap, timeout } from 'rxjs/operators';
 
 import {guaranteedThrottle} from './custom-operators';
@@ -51,9 +51,9 @@ function enableLiveReloadNaive() {
   return weShouldReload.pipe(
     switchMap(
       () => defer(
-        () => fromPromise(reloadAllWindows()).pipe(
+        () => from(reloadAllWindows()).pipe(
           timeout(5*1000),
-          catchError(() => empty())
+          catchError(() => EMPTY)
         )
       )
     )
@@ -83,7 +83,7 @@ function enableReactHMR() {
   return weShouldReload.pipe(
     switchMap(
       () => defer(
-        () => fromPromise(triggerHMRInRenderers()).pipe(catchError(() => empty()))
+        () => from(triggerHMRInRenderers()).pipe(catchError(() => EMPTY))
       )
     )
   ).subscribe(() => console.log("HMR sent to all windows!"));
