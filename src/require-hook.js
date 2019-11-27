@@ -44,9 +44,9 @@ export default function registerRequireExtension(compilerHost, isProduction) {
         accept: (cb) => window.__hot.push(cb)
       };
 
-      require.main.require('react-hot-loader/patch');
+      require('react-hot-loader/patch');
     } catch (e) {
-      console.error(`Couldn't require react-hot-loader/patch, you need to add react-hot-loader@3 as a dependency! ${e.message}`);
+      console.error(`Couldn't require react-hot-loader/patch, you need to add react-hot-loader as a dependency! ${e.message}`);
     }
   }
 
