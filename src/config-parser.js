@@ -6,7 +6,7 @@ import {pfs} from './promise';
 
 import FileChangedCache from './file-change-cache';
 import CompilerHost from './compiler-host';
-import registerRequireExtension from './require-hook';
+import { registerRequireExtension } from './require-hook';
 
 const d = require('debug')('@lanethegreat/electron-compile:config-parser');
 

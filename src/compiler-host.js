@@ -281,6 +281,50 @@ export default class CompilerHost {
   }
 
   /**
+   * Handles tree-crawling for dependencies for file change notifications
+   * in read-write mode
+   *
+   * @private
+   */
+  async walkDependencies(filePath, depSet=new Set(), hashInfo, compiler) {
+    if (!hashInfo) {
+      d(`Caching dependency ${filePath}`);
+      hashInfo = await this.fileChangeCache.getHashForPath(filePath);
+    }
+
+    if (hashInfo.isInNodeModules) return depSet;
+
+    if (!compiler) {
+      compiler = CompilerHost.shouldPassthrough(hashInfo)
+        ? this.getPassthroughCompiler()
+        : this.compilersByMimeType[mimeTypes.lookup(filePath) || '__lolnothere'];
+    }
+
+    if (!compiler) {
+      d(`Falling back to passthrough compiler for ${filePath}`);
+      compiler = this.fallbackCompiler;
+    }
+
+    if (!compiler) {
+      throw new Error(`Couldn't find a compiler for ${filePath}`);
+    }
+
+    let dependencies = (await compiler.determineDependentFiles(
+      hashInfo.sourceCode || await pfs.readFile(filePath, 'utf8'),
+      filePath
+    )).filter((x) => x);
+
+    for(let dependency of dependencies) {
+      if (!depSet.has(dependency)) {
+        depSet.add(dependency);
+        await this.walkDependencies(dependency, depSet);
+      }
+    }
+
+    return depSet;
+  }
+
+  /**
    * Handles compilation in read-write mode
    *
    * @private
@@ -313,10 +357,20 @@ export default class CompilerHost {
       throw new Error(`Couldn't find a compiler for ${filePath}`);
     }
 
-    let cache = this.cachesForCompilers.get(compiler);
-    return await cache.getOrFetch(
+    const cache = this.cachesForCompilers.get(compiler);
+    let cacheHashInfo = await cache.getOrFetch(
       filePath,
-      (filePath, hashInfo) => this.compileUncached(filePath, hashInfo, compiler));
+      async (filePath, hashInfo) => Object.assign(
+        this.compileUncached(filePath, hashInfo, compiler),
+        { dependentFiles: Array.from(await this.walkDependencies(filePath, new Set(), hashInfo, compiler)) }
+      )
+    );
+
+    for(let dependency of cacheHashInfo.dependentFiles) {
+      send('electron-compile-crawled-dep', { rootFile: filePath, filePath: dependency, mimeType: type });
+    }
+
+    return cacheHashInfo;
   }
 
   /**
@@ -408,6 +462,12 @@ export default class CompilerHost {
 
   listenToCompileEvents() {
     return listen('electron-compile-compiled-file').pipe(
+      map(([x]) => x)
+    );
+  }
+  
+  listenToDependencyEvents() {
+    return listen('electron-compile-crawled-dep').pipe(
       map(([x]) => x)
     );
   }
@@ -540,6 +600,44 @@ export default class CompilerHost {
     return { code, mimeType };
   }
 
+  walkDependenciesSync(filePath, depSet=new Set(), hashInfo, compiler) {
+    if (!hashInfo) {
+      d(`Caching dependency ${filePath}`);
+      hashInfo = this.fileChangeCache.getHashForPathSync(filePath);
+    }
+
+    if (hashInfo.isInNodeModules) return depSet;
+
+    if (!compiler) {
+      compiler = CompilerHost.shouldPassthrough(hashInfo)
+        ? this.getPassthroughCompiler()
+        : this.compilersByMimeType[mimeTypes.lookup(filePath) || '__lolnothere'];
+    }
+
+    if (!compiler) {
+      d(`Falling back to passthrough compiler for ${filePath}`);
+      compiler = this.fallbackCompiler;
+    }
+
+    if (!compiler) {
+      throw new Error(`Couldn't find a compiler for ${filePath}`);
+    }
+
+    let dependencies = compiler.determineDependentFilesSync(
+      hashInfo.sourceCode || fs.readFileSync(filePath, 'utf8'),
+      filePath
+    ).filter((x) => x);
+    
+    for(let dependency of dependencies) {
+      if (!depSet.has(dependency)) {
+        depSet.add(dependency);
+        this.walkDependenciesSync(dependency, depSet);
+      }
+    }
+
+    return depSet;
+  }
+
   fullCompileSync(filePath) {
     d(`Compiling ${filePath}`);
 
@@ -568,10 +666,20 @@ export default class CompilerHost {
       throw new Error(`Couldn't find a compiler for ${filePath}`);
     }
 
-    let cache = this.cachesForCompilers.get(compiler);
-    return cache.getOrFetchSync(
+    const cache = this.cachesForCompilers.get(compiler);
+    let cacheHashInfo = cache.getOrFetchSync(
       filePath,
-      (filePath, hashInfo) => this.compileUncachedSync(filePath, hashInfo, compiler));
+      (filePath, hashInfo) => Object.assign(
+        this.compileUncachedSync(filePath, hashInfo, compiler),
+        { dependentFiles: Array.from(this.walkDependenciesSync(filePath, new Set(), hashInfo, compiler)) }
+      )
+    );
+
+    for(let dependency of cacheHashInfo.dependentFiles) {
+      send('electron-compile-crawled-dep', { rootFile: filePath, filePath: dependency, mimeType: type });
+    }
+
+    return cacheHashInfo;
   }
 
   compileUncachedSync(filePath, hashInfo, compiler) {

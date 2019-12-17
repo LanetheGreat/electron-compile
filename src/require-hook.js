@@ -1,17 +1,25 @@
 import mimeTypes from '@paulcbetts/mime-types';
+import path from 'path';
 
 let HMR = false;
 let electron = null;
 
 const d = require('debug')('@lanethegreat/electron-compile:require-hook');
 
-if (process.type === 'renderer') {
+/**
+ * Initializes the hook used for triggering file compilation on files in
+ * development mode. Should only be used inside a render process with HMR
+ * enabled.
+ *
+ * @param  {CompilerHost} compilerHost  The compiler host to use for compilation.
+ */
+export function hookHotModuleReloader(compilerHost) {
   window.__hot = [];
   electron = require('electron');
   HMR = electron.remote.getGlobal('__electron_compile_hmr_enabled__');
 
   if (HMR) {
-    electron.ipcRenderer.on('__electron-compile__HMR', () => {
+    electron.ipcRenderer.on('__electron-compile__HMR', (event, modifiedFile) => {
       d("Got HMR signal!");
 
       // Reset the module cache
@@ -21,6 +29,12 @@ if (process.type === 'renderer') {
         d(`Removing node module entry for ${x}`);
         delete cache[x];
       });
+
+      // Recompile the detected top-level import file, if it isn't going to be compiled by require() later on.
+      let filePath = path.resolve(modifiedFile);
+      if (!(filePath in toEject)) {
+        compilerHost.compileSync(filePath);
+      }
 
       window.__hot.forEach(fn => fn());
     });
@@ -37,7 +51,7 @@ if (process.type === 'renderer') {
  * @param  {boolean} isProduction  Decides whether to use the read-only production 
  *                                 compiler cache or development compiler cache.
  */
-export default function registerRequireExtension(compilerHost, isProduction) {
+export function registerRequireExtension(compilerHost, isProduction) {
   if (HMR) {
     try {
       require('module').prototype.hot = {
@@ -68,3 +82,8 @@ export default function registerRequireExtension(compilerHost, isProduction) {
     };
   });
 }
+
+export default {
+  hookHotModuleReloader,
+  registerRequireExtension
+};

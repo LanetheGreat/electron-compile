@@ -1,6 +1,6 @@
 import FileChangedCache from './file-change-cache';
 import {watchPath} from './pathwatcher-rx';
-import { defer, from, EMPTY } from 'rxjs';
+import { defer, from, EMPTY, merge } from 'rxjs';
 import { catchError, filter, map, mergeMap, switchMap, timeout } from 'rxjs/operators';
 
 import {guaranteedThrottle} from './custom-operators';
@@ -39,7 +39,10 @@ function reloadAllWindows() {
 }
 
 function enableLiveReloadNaive() {
-  let filesWeCareAbout = global.globalCompilerHost.listenToCompileEvents().pipe(
+  let filesWeCareAbout = merge(
+    global.globalCompilerHost.listenToCompileEvents(),
+    global.globalCompilerHost.listenToDependencyEvents()
+  ).pipe(
     filter(x => !FileChangedCache.isInNodeModules(x.filePath))
   );
 
@@ -60,18 +63,25 @@ function enableLiveReloadNaive() {
   ).subscribe(() => console.log("Reloaded all windows!"));
 }
 
-function triggerHMRInRenderers() {
+function triggerHMRInRenderers(hashInfo) {
   BrowserWindow.getAllWindows().forEach((window) => {
-    window.webContents.send('__electron-compile__HMR');
+    window.webContents.send('__electron-compile__HMR', hashInfo.rootFile || hashInfo.filePath);
   });
 
   return Promise.resolve(true);
 }
 
+/*
+ * TODO: Add support for unsubscribing to file change notifications if a file
+ * is dropped from a dependency tree.
+*/
 function enableReactHMR() {
   global.__electron_compile_hmr_enabled__ = true;
 
-  let filesWeCareAbout = global.globalCompilerHost.listenToCompileEvents().pipe(
+  let filesWeCareAbout = merge(
+    global.globalCompilerHost.listenToCompileEvents(),
+    global.globalCompilerHost.listenToDependencyEvents()
+  ).pipe(
     filter(x => !FileChangedCache.isInNodeModules(x.filePath))
   );
 
@@ -82,8 +92,8 @@ function enableReactHMR() {
 
   return weShouldReload.pipe(
     switchMap(
-      () => defer(
-        () => from(triggerHMRInRenderers()).pipe(catchError(() => EMPTY))
+      (x) => defer(
+        () => from(triggerHMRInRenderers(x)).pipe(catchError(() => EMPTY))
       )
     )
   ).subscribe(() => console.log("HMR sent to all windows!"));
