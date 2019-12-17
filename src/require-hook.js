@@ -1,9 +1,9 @@
 import mimeTypes from '@paulcbetts/mime-types';
 
 let HMR = false;
+let electron = null;
 
 const d = require('debug')('@lanethegreat/electron-compile:require-hook');
-let electron = null;
 
 if (process.type === 'renderer') {
   window.__hot = [];

@@ -22,7 +22,7 @@ function requireModule(href) {
  * @private
  */ 
 export default (() => {
-  if (process.type !== 'renderer' || !window || !window.document) return null;
+  if (process.type !== 'renderer' || !window || !window.customElements) return null;
   
   let proto = Object.assign(Object.create(HTMLElement.prototype), {
     createdCallback: function() {

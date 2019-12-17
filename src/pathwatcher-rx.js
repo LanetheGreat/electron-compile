@@ -4,7 +4,7 @@ import { publish, refCount } from 'rxjs/operators';
 import LRU from 'lru-cache';
 
 export function watchPathDirect(directory) {
-  return Observable.create((subj) => {
+  return new Observable((subj) => {
     let dead = false;
 
     const watcher = fs.watch(directory, {}, (eventType, fileName) => {

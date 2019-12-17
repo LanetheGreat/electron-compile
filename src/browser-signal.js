@@ -23,7 +23,7 @@ export function send(channel, ...args) {
 export function listen(channel) {
   if (isElectron && !isBrowser) return throwError(new Error("Can only call listen from browser"));
 
-  return Observable.create((s) => {
+  return new Observable((s) => {
     if (!(channel in channelList)) {
       let subj = new Subject();
       let ipcListener = (e, ...args) => { subj.next(args); };

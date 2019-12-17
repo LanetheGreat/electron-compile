@@ -126,11 +126,7 @@ export default class FileChangedCache {
     this.changeCache[cacheKey] = { ctime, size, info };
     d(`Cache entry for ${cacheKey}: ${JSON.stringify(this.changeCache[cacheKey])}`);
 
-    if (binaryData) {
-      return Object.assign({binaryData}, info);
-    } else {
-      return Object.assign({sourceCode}, info);
-    }
+    return Object.assign(info, binaryData ? {binaryData} : {sourceCode});
   }
 
   async getInfoForCacheEntry(absoluteFilePath) {
@@ -286,11 +282,29 @@ export default class FileChangedCache {
     this.changeCache[cacheKey] = { ctime, size, info };
     d(`Cache entry for ${cacheKey}: ${JSON.stringify(this.changeCache[cacheKey])}`);
 
-    if (binaryData) {
-      return Object.assign({binaryData}, info);
-    } else {
-      return Object.assign({sourceCode}, info);
+    return Object.assign(info, binaryData ? {binaryData} : {sourceCode});
+  }
+
+  getInfoForCacheEntrySync(absoluteFilePath) {
+    let stat = fs.statSync(absoluteFilePath);
+    if (!stat || !stat.isFile()) throw new Error(`Can't stat ${absoluteFilePath}`);
+
+    return {
+      stat,
+      ctime: stat.ctime.getTime(),
+      size: stat.size
+    };
+  }
+
+  hasFileChangedSync(absoluteFilePath, cacheEntry=null, fileHashInfo=null) {
+    cacheEntry = cacheEntry || this.getCacheEntryForPath(absoluteFilePath).cacheEntry;
+    fileHashInfo = fileHashInfo || this.getInfoForCacheEntrySync(absoluteFilePath);
+
+    if (cacheEntry) {
+      return !(cacheEntry.ctime >= fileHashInfo.ctime && cacheEntry.size === fileHashInfo.size);
     }
+
+    return false;
   }
 
   saveSync(filePath) {

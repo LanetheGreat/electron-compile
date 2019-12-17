@@ -72,7 +72,7 @@ export default class CompilerHost {
    *                               Default to cachePath if not specified.
    */
   constructor(rootCacheDir, compilers, fileChangeCache, readOnlyMode, fallbackCompiler = null, sourceMapPath = null, mimeTypesToRegister = null) {
-    let compilersByMimeType = Object.assign({}, compilers);
+    let compilersByMimeType = {...compilers};
     Object.assign(this, {rootCacheDir, compilersByMimeType, fileChangeCache, readOnlyMode, fallbackCompiler});
     this.appRoot = this.fileChangeCache.appRoot;
 
@@ -287,6 +287,7 @@ export default class CompilerHost {
    */
   async fullCompile(filePath) {
     d(`Compiling ${filePath}`);
+
     let type = mimeTypes.lookup(filePath);
 
     send('electron-compile-compiled-file', { filePath, mimeType: type });
@@ -362,7 +363,11 @@ export default class CompilerHost {
     } else {
       d(`Recursively compiling result of ${filePath} with non-final MIME type ${result.mimeType}, input was ${inputMimeType}`);
 
-      hashInfo = Object.assign({ sourceCode: result.code, mimeType: result.mimeType }, hashInfo);
+      hashInfo = {
+        sourceCode: result.code,
+        mimeType: result.mimeType,
+        ...hashInfo
+      };
       compiler = this.compilersByMimeType[result.mimeType || '__lolnothere'];
 
       if (!compiler) {
@@ -607,7 +612,11 @@ export default class CompilerHost {
     } else {
       d(`Recursively compiling result of ${filePath} with non-final MIME type ${result.mimeType}, input was ${inputMimeType}`);
 
-      hashInfo = Object.assign({ sourceCode: result.code, mimeType: result.mimeType }, hashInfo);
+      hashInfo = {
+        sourceCode: result.code,
+        mimeType: result.mimeType,
+        ...hashInfo
+      };
       compiler = this.compilersByMimeType[result.mimeType || '__lolnothere'];
 
       if (!compiler) {
