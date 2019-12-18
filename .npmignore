@@ -2,12 +2,14 @@ test-dist/
 test/
 docs/
 src/
+.nyc_output/
 .babelrc
 .editorconfig
 .eslintrc
 .gitattributes
 .jshintrc
 .npmignore
+.nycrc
 .travis.yml
 *.md
 esdoc.json
