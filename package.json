@@ -56,7 +56,7 @@
     "@babel/preset-react": "^7.0.0",
     "@babel/register": "^7.0.0",
     "@istanbuljs/nyc-config-babel": "^2.1.1",
-    "@lanethegreat/electron-compilers": "6.0.0-beta.6",
+    "@lanethegreat/electron-compilers": "^6.0.0",
     "asar": "^2.0.0",
     "babel-eslint": "^10.0.0",
     "babel-plugin-array-includes": "^2.0.3",
