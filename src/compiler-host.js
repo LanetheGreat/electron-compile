@@ -1,6 +1,7 @@
 import mimeTypes from '@paulcbetts/mime-types';
 import fs from 'fs';
 import zlib from 'zlib';
+import crypto from 'crypto';
 import path from 'path';
 import {pfs, pzlib} from './promise';
 
@@ -12,7 +13,7 @@ import {listen, send} from './browser-signal';
 
 const d = require('debug')('@lanethegreat/electron-compile:compiler-host');
 
-import 'rxjs/add/operator/map';
+import { map } from 'rxjs/operators';
 
 require('./rig-mime-types').init();
 
@@ -72,7 +73,7 @@ export default class CompilerHost {
    *                               Default to cachePath if not specified.
    */
   constructor(rootCacheDir, compilers, fileChangeCache, readOnlyMode, fallbackCompiler = null, sourceMapPath = null, mimeTypesToRegister = null) {
-    let compilersByMimeType = Object.assign({}, compilers);
+    let compilersByMimeType = {...compilers};
     Object.assign(this, {rootCacheDir, compilersByMimeType, fileChangeCache, readOnlyMode, fallbackCompiler});
     this.appRoot = this.fileChangeCache.appRoot;
 
@@ -200,7 +201,7 @@ export default class CompilerHost {
     };
 
     let target = path.join(this.rootCacheDir, 'compiler-info.json.gz');
-    let buf = await pzlib.gzip(new Buffer(JSON.stringify(info)));
+    let buf = await pzlib.gzip(Buffer.from(JSON.stringify(info)));
     await pfs.writeFile(target, buf);
   }
 
@@ -281,12 +282,57 @@ export default class CompilerHost {
   }
 
   /**
+   * Handles tree-crawling for dependencies for file change notifications
+   * in read-write mode
+   *
+   * @private
+   */
+  async walkDependencies(filePath, depSet=new Set(), hashInfo, compiler) {
+    if (!hashInfo) {
+      d(`Caching dependency ${filePath}`);
+      hashInfo = await this.fileChangeCache.getHashForPath(filePath);
+    }
+
+    if (hashInfo.isInNodeModules) return depSet;
+
+    if (!compiler) {
+      compiler = CompilerHost.shouldPassthrough(hashInfo)
+        ? this.getPassthroughCompiler()
+        : this.compilersByMimeType[mimeTypes.lookup(filePath) || '__lolnothere'];
+    }
+
+    if (!compiler) {
+      d(`Falling back to passthrough compiler for ${filePath}`);
+      compiler = this.fallbackCompiler;
+    }
+
+    if (!compiler) {
+      throw new Error(`Couldn't find a compiler for ${filePath}`);
+    }
+
+    let dependencies = (await compiler.determineDependentFiles(
+      hashInfo.sourceCode || await pfs.readFile(filePath, 'utf8'),
+      filePath
+    )).filter((x) => x);
+
+    for(let dependency of dependencies) {
+      if (!depSet.has(dependency)) {
+        depSet.add(dependency);
+        await this.walkDependencies(dependency, depSet);
+      }
+    }
+
+    return depSet;
+  }
+
+  /**
    * Handles compilation in read-write mode
    *
    * @private
    */
   async fullCompile(filePath) {
     d(`Compiling ${filePath}`);
+
     let type = mimeTypes.lookup(filePath);
 
     send('electron-compile-compiled-file', { filePath, mimeType: type });
@@ -312,10 +358,20 @@ export default class CompilerHost {
       throw new Error(`Couldn't find a compiler for ${filePath}`);
     }
 
-    let cache = this.cachesForCompilers.get(compiler);
-    return await cache.getOrFetch(
+    const cache = this.cachesForCompilers.get(compiler);
+    let cacheHashInfo = await cache.getOrFetch(
       filePath,
-      (filePath, hashInfo) => this.compileUncached(filePath, hashInfo, compiler));
+      async (filePath, hashInfo) => Object.assign(
+        this.compileUncached(filePath, hashInfo, compiler),
+        { dependentFiles: Array.from(await this.walkDependencies(filePath, new Set(), hashInfo, compiler)) }
+      )
+    );
+
+    for(let dependency of cacheHashInfo.dependentFiles) {
+      send('electron-compile-crawled-dep', { rootFile: filePath, filePath: dependency, mimeType: type });
+    }
+
+    return cacheHashInfo;
   }
 
   /**
@@ -327,8 +383,10 @@ export default class CompilerHost {
     let inputMimeType = mimeTypes.lookup(filePath);
 
     if (hashInfo.isFileBinary) {
+      const binaryData = hashInfo.binaryData || await pfs.readFile(filePath);
       return {
-        binaryData: hashInfo.binaryData || await pfs.readFile(filePath),
+        codeHash: crypto.createHash('sha1').update(binaryData).digest('hex'),
+        binaryData,
         mimeType: inputMimeType,
         dependentFiles: []
       };
@@ -339,13 +397,19 @@ export default class CompilerHost {
 
     if (!(await compiler.shouldCompileFile(code, ctx))) {
       d(`Compiler returned false for shouldCompileFile: ${filePath}`);
-      return { code, mimeType: mimeTypes.lookup(filePath), dependentFiles: [] };
+      return {
+        code,
+        codeHash: crypto.createHash('sha1').update(code).digest('hex'),
+        mimeType: mimeTypes.lookup(filePath),
+        dependentFiles: []
+      };
     }
 
     let dependentFiles = await compiler.determineDependentFiles(code, filePath, ctx);
 
     d(`Using compiler options: ${JSON.stringify(compiler.compilerOptions)}`);
     let result = await compiler.compile(code, filePath, ctx);
+    result.codeHash = crypto.createHash('sha1').update(result.code).digest('hex');
 
     let shouldInlineHtmlify =
       inputMimeType !== 'text/html' &&
@@ -362,7 +426,11 @@ export default class CompilerHost {
     } else {
       d(`Recursively compiling result of ${filePath} with non-final MIME type ${result.mimeType}, input was ${inputMimeType}`);
 
-      hashInfo = Object.assign({ sourceCode: result.code, mimeType: result.mimeType }, hashInfo);
+      hashInfo = {
+        sourceCode: result.code,
+        mimeType: result.mimeType,
+        ...hashInfo
+      };
       compiler = this.compilersByMimeType[result.mimeType || '__lolnothere'];
 
       if (!compiler) {
@@ -402,7 +470,15 @@ export default class CompilerHost {
   }
 
   listenToCompileEvents() {
-    return listen('electron-compile-compiled-file').map(([x]) => x);
+    return listen('electron-compile-compiled-file').pipe(
+      map(([x]) => x)
+    );
+  }
+  
+  listenToDependencyEvents() {
+    return listen('electron-compile-crawled-dep').pipe(
+      map(([x]) => x)
+    );
   }
 
   /*
@@ -476,7 +552,7 @@ export default class CompilerHost {
     };
 
     let target = path.join(this.rootCacheDir, 'compiler-info.json.gz');
-    let buf = zlib.gzipSync(new Buffer(JSON.stringify(info)));
+    let buf = zlib.gzipSync(Buffer.from(JSON.stringify(info)));
     fs.writeFileSync(target, buf);
   }
 
@@ -533,6 +609,44 @@ export default class CompilerHost {
     return { code, mimeType };
   }
 
+  walkDependenciesSync(filePath, depSet=new Set(), hashInfo, compiler) {
+    if (!hashInfo) {
+      d(`Caching dependency ${filePath}`);
+      hashInfo = this.fileChangeCache.getHashForPathSync(filePath);
+    }
+
+    if (hashInfo.isInNodeModules) return depSet;
+
+    if (!compiler) {
+      compiler = CompilerHost.shouldPassthrough(hashInfo)
+        ? this.getPassthroughCompiler()
+        : this.compilersByMimeType[mimeTypes.lookup(filePath) || '__lolnothere'];
+    }
+
+    if (!compiler) {
+      d(`Falling back to passthrough compiler for ${filePath}`);
+      compiler = this.fallbackCompiler;
+    }
+
+    if (!compiler) {
+      throw new Error(`Couldn't find a compiler for ${filePath}`);
+    }
+
+    let dependencies = compiler.determineDependentFilesSync(
+      hashInfo.sourceCode || fs.readFileSync(filePath, 'utf8'),
+      filePath
+    ).filter((x) => x);
+    
+    for(let dependency of dependencies) {
+      if (!depSet.has(dependency)) {
+        depSet.add(dependency);
+        this.walkDependenciesSync(dependency, depSet);
+      }
+    }
+
+    return depSet;
+  }
+
   fullCompileSync(filePath) {
     d(`Compiling ${filePath}`);
 
@@ -561,18 +675,30 @@ export default class CompilerHost {
       throw new Error(`Couldn't find a compiler for ${filePath}`);
     }
 
-    let cache = this.cachesForCompilers.get(compiler);
-    return cache.getOrFetchSync(
+    const cache = this.cachesForCompilers.get(compiler);
+    let cacheHashInfo = cache.getOrFetchSync(
       filePath,
-      (filePath, hashInfo) => this.compileUncachedSync(filePath, hashInfo, compiler));
+      (filePath, hashInfo) => Object.assign(
+        this.compileUncachedSync(filePath, hashInfo, compiler),
+        { dependentFiles: Array.from(this.walkDependenciesSync(filePath, new Set(), hashInfo, compiler)) }
+      )
+    );
+
+    for(let dependency of cacheHashInfo.dependentFiles) {
+      send('electron-compile-crawled-dep', { rootFile: filePath, filePath: dependency, mimeType: type });
+    }
+
+    return cacheHashInfo;
   }
 
   compileUncachedSync(filePath, hashInfo, compiler) {
     let inputMimeType = mimeTypes.lookup(filePath);
 
     if (hashInfo.isFileBinary) {
+      const binaryData = hashInfo.binaryData || fs.readFileSync(filePath);
       return {
-        binaryData: hashInfo.binaryData || fs.readFileSync(filePath),
+        codeHash: crypto.createHash('sha1').update(binaryData).digest('hex'),
+        binaryData,
         mimeType: inputMimeType,
         dependentFiles: []
       };
@@ -583,12 +709,19 @@ export default class CompilerHost {
 
     if (!(compiler.shouldCompileFileSync(code, ctx))) {
       d(`Compiler returned false for shouldCompileFile: ${filePath}`);
-      return { code, mimeType: mimeTypes.lookup(filePath), dependentFiles: [] };
+      return {
+        code,
+        codeHash: crypto.createHash('sha1').update(code).digest('hex'),
+        mimeType: mimeTypes.lookup(filePath),
+        dependentFiles: []
+      };
     }
 
     let dependentFiles = compiler.determineDependentFilesSync(code, filePath, ctx);
 
+    d(`Using compiler options: ${JSON.stringify(compiler.compilerOptions)}`);
     let result = compiler.compileSync(code, filePath, ctx);
+    result.codeHash = crypto.createHash('sha1').update(result.code).digest('hex');
 
     let shouldInlineHtmlify =
       inputMimeType !== 'text/html' &&
@@ -605,7 +738,11 @@ export default class CompilerHost {
     } else {
       d(`Recursively compiling result of ${filePath} with non-final MIME type ${result.mimeType}, input was ${inputMimeType}`);
 
-      hashInfo = Object.assign({ sourceCode: result.code, mimeType: result.mimeType }, hashInfo);
+      hashInfo = {
+        sourceCode: result.code,
+        mimeType: result.mimeType,
+        ...hashInfo
+      };
       compiler = this.compilersByMimeType[result.mimeType || '__lolnothere'];
 
       if (!compiler) {

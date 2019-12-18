@@ -18,7 +18,7 @@ fs.statSyncNoException = fs.statSyncNoException || ((...args) => {
 let enableLiveReload = null;
 let watchPath = null;
 
-module.exports = Object.assign({
+module.exports = {
   // NB: delay-load live-reload so we don't load RxJS in production
   enableLiveReload: function(...args) {
     enableLiveReload = enableLiveReload || require('./live-reload').enableLiveReload;
@@ -28,7 +28,9 @@ module.exports = Object.assign({
     watchPath = watchPath || require('./pathwatcher-rx').watchPath;
     return watchPath(...args);
   },
-},
-  configParser,
-  { CompilerHost, FileChangedCache, CompileCache, addBypassChecker }
-);
+  ...configParser,
+  CompilerHost,
+  FileChangedCache,
+  CompileCache,
+  addBypassChecker
+};

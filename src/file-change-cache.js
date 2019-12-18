@@ -126,11 +126,7 @@ export default class FileChangedCache {
     this.changeCache[cacheKey] = { ctime, size, info };
     d(`Cache entry for ${cacheKey}: ${JSON.stringify(this.changeCache[cacheKey])}`);
 
-    if (binaryData) {
-      return Object.assign({binaryData}, info);
-    } else {
-      return Object.assign({sourceCode}, info);
-    }
+    return Object.assign(info, binaryData ? {binaryData} : {sourceCode});
   }
 
   async getInfoForCacheEntry(absoluteFilePath) {
@@ -181,6 +177,7 @@ export default class FileChangedCache {
    *
    * @param  {string} absoluteFilePath  The path to a file to retrieve info on.
    * @param  {Object} cacheEntry  Cache data from {@link getCacheEntryForPath}
+   * @param  {Object} fileHashInfo  File stat info from {@link getInfoForCacheEntry}
    *
    * @return {boolean}
    */
@@ -214,7 +211,7 @@ export default class FileChangedCache {
   async save(filePath) {
     let toSave = this.getSavedData();
 
-    let buf = await pzlib.gzip(new Buffer(JSON.stringify(toSave)));
+    let buf = await pzlib.gzip(Buffer.from(JSON.stringify(toSave)));
     await pfs.writeFile(filePath, buf);
   }
 
@@ -285,17 +282,35 @@ export default class FileChangedCache {
     this.changeCache[cacheKey] = { ctime, size, info };
     d(`Cache entry for ${cacheKey}: ${JSON.stringify(this.changeCache[cacheKey])}`);
 
-    if (binaryData) {
-      return Object.assign({binaryData}, info);
-    } else {
-      return Object.assign({sourceCode}, info);
+    return Object.assign(info, binaryData ? {binaryData} : {sourceCode});
+  }
+
+  getInfoForCacheEntrySync(absoluteFilePath) {
+    let stat = fs.statSync(absoluteFilePath);
+    if (!stat || !stat.isFile()) throw new Error(`Can't stat ${absoluteFilePath}`);
+
+    return {
+      stat,
+      ctime: stat.ctime.getTime(),
+      size: stat.size
+    };
+  }
+
+  hasFileChangedSync(absoluteFilePath, cacheEntry=null, fileHashInfo=null) {
+    cacheEntry = cacheEntry || this.getCacheEntryForPath(absoluteFilePath).cacheEntry;
+    fileHashInfo = fileHashInfo || this.getInfoForCacheEntrySync(absoluteFilePath);
+
+    if (cacheEntry) {
+      return !(cacheEntry.ctime >= fileHashInfo.ctime && cacheEntry.size === fileHashInfo.size);
     }
+
+    return false;
   }
 
   saveSync(filePath) {
     let toSave = this.getSavedData();
 
-    let buf = zlib.gzipSync(new Buffer(JSON.stringify(toSave)));
+    let buf = zlib.gzipSync(Buffer.from(JSON.stringify(toSave)));
     fs.writeFileSync(filePath, buf);
   }
 
@@ -347,7 +362,7 @@ export default class FileChangedCache {
    * @private
    */
   static isInNodeModules(filePath) {
-    return !!(filePath.match(/(node_modules|bower_components)[\\\/]/i) || filePath.match(/(atom|electron)\.asar/));
+    return !!(filePath.match(/(node_modules|bower_components)[\\/]/i) || filePath.match(/(atom|electron)\.asar/));
   }
 
 
@@ -376,7 +391,7 @@ export default class FileChangedCache {
     let encoding;
     if (buffer.length <= 128) {
       encoding = encodings.find(x =>
-        Buffer.compare(new Buffer(buffer.toString(), x), buffer) === 0
+        Buffer.compare(Buffer.from(buffer.toString(), x), buffer) === 0
       );
     } else {
       encoding = encodings.find(x => !FileChangedCache.containsControlCharacters(buf.toString(x)));

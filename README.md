@@ -26,6 +26,7 @@ For CSS:
 For HTML:
 
 * Jade
+* Pug (2.0)
 * Vue.js 2.0 Single-File Components
 
 For JSON:
@@ -103,8 +104,8 @@ If you are using React, you can also enable Hot Module Reloading for both JavaSc
 ```json
 {
   "application/javascript": {
-    "presets": ["react", "es2017-node7"],
-    "plugins": ["react-hot-loader/babel", "transform-async-to-generator"]
+    "presets": ["@babel/preset-react", "@babel/preset-env"],
+    "plugins": ["react-hot-loader/babel", "@babel/plugin-transform-async-to-generator"]
   }
 }
 ```
@@ -159,7 +160,7 @@ If you've got a `.babelrc` and that's all you want to customize, you can simply 
 ```json
 {
   "application/javascript": {
-    "presets": ["es2016-node5", "react"],
+    "presets": ["@babel/preset-env", "@babel/preset-react"],
     "sourceMaps": "inline"
   },
   "text/less": {
@@ -175,7 +176,7 @@ If you've got a `.babelrc` and that's all you want to customize, you can simply 
   "env": {
     "development": {
       "application/javascript": {
-        "presets": ["es2016-node5", "react"],
+        "presets": ["@babel/preset-env", "@babel/preset-react"],
         "sourceMaps": "inline"
       },
       "text/less": {
@@ -184,7 +185,7 @@ If you've got a `.babelrc` and that's all you want to customize, you can simply 
     },
     "production": {
       "application/javascript": {
-        "presets": ["es2016-node5", "react"],
+        "presets": ["@babel/preset-env", "@babel/preset-react"],
         "sourceMaps": "none"
       }
     }
@@ -199,6 +200,7 @@ The opening Object is a list of MIME Types, and options passed to the compiler i
 * TypeScript - https://github.com/Microsoft/TypeScript/blob/v1.5.0-beta/bin/typescriptServices.d.ts#L1076
 * Less - http://lesscss.org/usage/index.html#command-line-usage-options
 * Jade - http://jade-lang.com/api
+* Pug - https://pugjs.org/api/reference.html
 
 ## How can I compile only some file types but not others?
 
@@ -244,3 +246,23 @@ electron-compile --appDir /path/to/my/app ./src ./static
 ### But I use Grunt / Gulp / I want to do Something Interesting
 
 Compilation also has its own API, check out the [documentation](http://electron-userland.github.io/electron-compile/docs/) for more information.
+
+## Known Issues/Questions
+
+### "[Deprecation] CSS cannot be loaded from \`file:\` URLs unless they end in a \`.css\` file extension" LESS/SASS/SCSS error.
+
+It's known that back around Electron v3, Chromium deprecated using files in <link> tags without the ".css" extension. To combat this, electron-compile now supports the use of `_useExt` in the query string for stylesheets to remap the file extension to the LESS/SASS/SCSS file extension when compiling files. So instead of:
+```html
+  <head>
+    <title>Example HTML Page</title>
+    <link rel="stylesheet" href="css/index.sass" />
+  </head>
+```
+You would do this instead to remap to the correct file extension, using .css on the original filename:
+```html
+  <head>
+    <title>Example HTML Page</title>
+    <link rel="stylesheet" href="css/index.css?_useExt=sass" />
+  </head>
+```
+Credit to user [Martin Koch](https://github.com/carlrabbit) for this suggestion in the original [PR #319](https://github.com/electron-userland/electron-compile/pull/319)

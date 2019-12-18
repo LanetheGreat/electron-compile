@@ -112,7 +112,7 @@ describe('The compile cache', function() {
       let code = hashInfo.sourceCode || fs.readFileSync(filePath, 'utf8');
       let mimeType = 'application/javascript';
 
-      return { code, mimeType };
+      return { code, mimeType, dependentFiles: [] };
     };
 
     let result = this.fixture.getOrFetchSync(inputFile, fetcher);

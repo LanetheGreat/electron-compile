@@ -6,7 +6,7 @@ import {pfs} from './promise';
 
 import FileChangedCache from './file-change-cache';
 import CompilerHost from './compiler-host';
-import registerRequireExtension from './require-hook';
+import { registerRequireExtension } from './require-hook';
 
 const d = require('debug')('@lanethegreat/electron-compile:config-parser');
 
@@ -33,6 +33,8 @@ function statSyncNoException(fsPath) {
  * init instead of directly
  *
  * @param {CompilerHost} compilerHost  The compiler host to use.
+ * @param {boolean} isProduction  Decides whether to use the read-only production 
+ *                                compiler cache or development compiler cache.
  *
  */
 export function initializeGlobalHooks(compilerHost, isProduction=false) {
@@ -159,8 +161,8 @@ export function createCompilerHostFromConfiguration(info) {
  * from {@link createCompilerHostFromProjectRoot} instead of used directly.
  *
  * @param  {string} file  The path to a .babelrc file
- *
  * @param  {string} rootCacheDir (optional)  The directory to use as a cache.
+ * @param  {string} sourceMapPath (optional)  The directory to store source maps in.
  *
  * @return {Promise<CompilerHost>}  A set-up compiler host
  */
@@ -204,8 +206,8 @@ export async function createCompilerHostFromBabelRc(file, rootCacheDir=null, sou
  * from {@link createCompilerHostFromProjectRoot} instead of used directly.
  *
  * @param  {string} file  The path to a .compilerc file
- *
  * @param  {string} rootCacheDir (optional)  The directory to use as a cache.
+ * @param  {string} sourceMapPath (optional)  The directory to store source maps in.
  *
  * @return {Promise<CompilerHost>}  A set-up compiler host
  */
@@ -279,7 +281,7 @@ export function createCompilerHostFromBabelRcSync(file, rootCacheDir=null, sourc
 
   // Are we still package.json (i.e. is there no babel info whatsoever?)
   if ('name' in info && 'version' in info) {
-    let appRoot = path.dirname(file)
+    let appRoot = path.dirname(file);
     return createCompilerHostFromConfiguration({
       appRoot: appRoot,
       options: getDefaultConfiguration(appRoot),
@@ -404,7 +406,7 @@ export function getDefaultConfiguration(rootDir) {
             "electron": getElectronVersion(rootDir)
           }
         }],
-        "react"
+        "@babel/preset-react"
       ],
       "sourceMaps": "inline"
     }
@@ -414,7 +416,7 @@ export function getDefaultConfiguration(rootDir) {
 /**
  * Allows you to create new instances of all compilers that are supported by
  * electron-compile and use them directly. Currently supports Babel, CoffeeScript,
- * TypeScript, Less, and Jade.
+ * TypeScript, Less, and Jade/Pug.
  *
  * @return {Object}  An Object whose Keys are MIME types, and whose values
  * are instances of @{link CompilerBase}.

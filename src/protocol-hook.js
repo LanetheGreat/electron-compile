@@ -109,13 +109,13 @@ export function initializeProtocolHook(compilerHost) {
   const electronCompileSetupCode = `if (window.require) require('@lanethegreat/electron-compile/lib/initialize-renderer').initializeRendererProcess(${compilerHost.readOnlyMode});`;
 
   protocol.interceptBufferProtocol('file', async function(request, finish) {
-    let uri = url.parse(request.url);
+    let uri = url.parse(request.url, true);
 
     d(`Intercepting url ${request.url}`);
     if (request.url.indexOf(magicWords) > -1) {
       finish({
         mimeType: 'application/javascript',
-        data: new Buffer(electronCompileSetupCode, 'utf8')
+        data: Buffer.from(electronCompileSetupCode, 'utf8')
       });
 
       return;
@@ -133,13 +133,20 @@ export function initializeProtocolHook(compilerHost) {
 
     let filePath = decodeURIComponent(uri.pathname);
 
+    // Check if requested .css files need to be transpiled from another source file.
+    // Electron (or the V8 engine) does not permit loading of stylesheet files ending in
+    // anything other than '.css'
+    if (uri.query && uri.query['_useExt']) {
+      filePath = filePath.replace(/\.css$/i, `.${uri.query['_useExt']}`);
+    }
+
     // NB: pathname has a leading '/' on Win32 for some reason
     if (process.platform === 'win32') {
       filePath = filePath.slice(1);
     }
 
     // NB: Special-case files coming from atom.asar or node_modules
-    if (filePath.match(/[\/\\](atom|electron).asar/) || filePath.match(/[\/\\](node_modules|bower_components)/)) {
+    if (filePath.match(/[/\\](atom|electron).asar/) || filePath.match(/[/\\](node_modules|bower_components)/)) {
       // NBs on NBs: If we're loading an HTML file from node_modules, we still have
       // to do the HTML document rigging
       if (filePath.match(/\.html?$/i)) {
@@ -156,7 +163,7 @@ export function initializeProtocolHook(compilerHost) {
           }
 
           riggedContents = rigHtmlDocumentToInitializeElectronCompile(contents);
-          finish({ data: new Buffer(riggedContents), mimeType: 'text/html' });
+          finish({ data: Buffer.from(riggedContents), mimeType: 'text/html' });
           return;
         });
 
@@ -172,7 +179,7 @@ export function initializeProtocolHook(compilerHost) {
     // relative to the HTML file. Since we can't really figure out what the
     // real path is, we just need to squelch it.
     if (filePath.match(/\.map$/i) && !(await doesMapFileExist(filePath))) {
-      finish({ data: new Buffer("", 'utf8'), mimeType: 'text/plain' });
+      finish({ data: Buffer.from("", 'utf8'), mimeType: 'text/plain' });
       return;
     }
 
@@ -195,7 +202,7 @@ export function initializeProtocolHook(compilerHost) {
         finish({ data: result.binaryData || result.code, mimeType: result.mimeType });
         return;
       } else {
-        finish({ data: new Buffer(result.code), mimeType: result.mimeType });
+        finish({ data: Buffer.from(result.code), mimeType: result.mimeType });
         return;
       }
     } catch (e) {
@@ -207,7 +214,7 @@ export function initializeProtocolHook(compilerHost) {
         return;
       }
 
-      finish({ mimeType: 'text/plain', data: new Buffer(err) });
+      finish({ mimeType: 'text/plain', data: Buffer.from(err) });
       return;
     }
   });

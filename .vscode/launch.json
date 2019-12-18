@@ -18,8 +18,8 @@
         "tdd",
         "--timeout",
         "999999",
-        "--compilers",
-        "js:babel-register",
+        "--require",
+        "@babel/register",
         "--colors",
         "${workspaceRoot}/test/*.js"
       ],

@@ -26,7 +26,7 @@ describe('The inline HTML compiler', function() {
     }, {});
 
     compilers['application/javascript'].compilerOptions = {
-      "presets": ["es2016-node5", "react"],
+      "presets": ["@babel/preset-env", "@babel/preset-react"],
       "sourceMaps": "inline"
     };
 

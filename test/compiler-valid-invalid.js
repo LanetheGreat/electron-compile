@@ -22,6 +22,7 @@ let mimeTypesToTest = allFixtureFiles.reduce((acc,x) => {
 const expectedMimeTypeSpecialCases = {
   'text/less': 'text/css',
   'text/jade': 'text/html',
+  'text/pug': 'text/html',
   'text/cson': 'application/json',
   'text/css': 'text/css',
   'text/stylus': 'text/css',
@@ -32,6 +33,7 @@ const expectedMimeTypeSpecialCases = {
 
 const mimeTypesWithoutSourceMapSupport = [
   'text/jade',
+  'text/pug',
   'text/cson',
   'text/css',
   'text/sass',
@@ -41,14 +43,14 @@ const mimeTypesWithoutSourceMapSupport = [
 
 const compilerOptionsForMimeType = {
   'application/javascript': {
-    "presets": ["es2016-node5"],
-    "plugins": ["transform-async-to-generator"],
+    "presets": ["@babel/preset-env"],
+    "plugins": ["@babel/plugin-transform-async-to-generator"],
     "sourceMaps": "inline"
   },
 
   'text/jsx': {
-    "presets": ["es2016-node5", "react"],
-    "plugins": ["transform-async-to-generator"],
+    "presets": ["@babel/preset-env", "@babel/preset-react"],
+    "plugins": ["@babel/plugin-transform-async-to-generator"],
     "sourceMaps": "inline"
   },
 

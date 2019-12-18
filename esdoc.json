@@ -3,24 +3,32 @@
   "destination": "./docs",
   "includes": ["\\.(js|es6)$"],
   "excludes": ["\\.config\\.(js|es6)$"],
-  "access": ["public", "protected"],
-  "autoPrivate": true,
-  "unexportIdentifier": false,
-  "undocumentIdentifier": true,
-  "builtinExternal": true,
-  "index": "./README.md",
   "package": "./package.json",
-  "coverage": true,
-  "includeSource": true,
-  "title": "@lanethegreat/electron-compilers",
   "plugins": [
-    {"name": "esdoc-es7-plugin"},
-    {"name": "esdoc-plugin-async-to-sync"}
-  ],
-  "test": {
-    "type": "mocha",
-    "source": "./test",
-    "includes": ["\\.(js|es6)$"]
-  },
-  "lint": true
+    {
+      "name": "esdoc-standard-plugin",
+      "option": {
+        "lint": { "enable": true },
+        "coverage": { "enable": true },
+        "accessor": { "access": ["public", "protected"], "autoPrivate": true },
+        "undocumentIdentifier": { "enable": true },
+        "unexportIdentifier": { "enable": false },
+        "brand": {
+          "title": "@lanethegreat/electron-compile"
+        },
+        "manual": {
+          "index": "./README.md",
+          "globalIndex": true,
+          "files": []
+        },
+        "test": {
+          "source": "./test",
+          "includes": ["\\.(js|es6)$"]
+        }
+      }
+    },
+    {"name": "esdoc-ecmascript-proposal-plugin", "option": {"all": true}},
+    {"name": "esdoc-plugin-async-to-sync"},
+    {"name": "esdoc-exclude-source-plugin"}
+  ]
 }

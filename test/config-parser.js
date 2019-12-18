@@ -49,7 +49,7 @@ describe('the configuration parser module', function() {
         rootCacheDir: this.tempCacheDir,
         options: {
           'application/javascript': {
-            "presets": ["es2016-node5"],
+            "presets": ["@babel/preset-env"],
             "sourceMaps": false
           }
         }

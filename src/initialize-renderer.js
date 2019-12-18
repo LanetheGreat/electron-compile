@@ -40,6 +40,8 @@ export function initializeRendererProcess(readOnlyMode) {
   }
 
   require('./x-require');
-  require('./require-hook').default(compilerHost, readOnlyMode);
+  const { hookHotModuleReloader, registerRequireExtension } = require('./require-hook');
+  hookHotModuleReloader(compilerHost);
+  registerRequireExtension(compilerHost, readOnlyMode);
   rendererInitialized = true;
 }
