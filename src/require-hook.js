@@ -1,10 +1,29 @@
 import mimeTypes from '@paulcbetts/mime-types';
 import path from 'path';
+import url from 'url';
 
 let HMR = false;
 let electron = null;
 
 const d = require('debug')('@lanethegreat/electron-compile:require-hook');
+
+function URLtoLocal(URL) {
+
+  const ext = URL.searchParams.get('_useExt');
+  let localPath = process.platform === 'win32'
+    ? URL.pathname.slice(1)
+    : URL.pathname;
+
+  if (ext) {
+    localPath = path.format({
+      ...path.parse(localPath),
+      ext: `.${ext}`,
+      base: undefined
+    });
+  }
+
+  return path.normalize(localPath);
+}
 
 /**
  * Initializes the hook used for triggering file compilation on files in
@@ -33,7 +52,25 @@ export function hookHotModuleReloader(compilerHost) {
       // Recompile the detected top-level import file, if it isn't going to be compiled by require() later on.
       let filePath = path.resolve(modifiedFile);
       if (!(filePath in toEject)) {
-        compilerHost.compileSync(filePath);
+        const hashInfo = compilerHost.compileSync(filePath);
+        const normPath = path.normalize(filePath);
+        
+        // Check each script/link tag in the document to update their URL's and trigger live file reloads.
+        for(let element of document.querySelectorAll('script, link[rel=stylesheet]')) {
+          const parsedURL = new url.URL(element.src || element.href);
+          const localPath = URLtoLocal(parsedURL);
+
+          // Found a matching file so update it's URL with a new source file hash.
+          if (localPath === normPath) {
+            parsedURL.searchParams.set('hash', hashInfo.codeHash);
+
+            if (element.src) {
+              element.src = parsedURL.toString();
+            } else {
+              element.href = parsedURL.toString();
+            }
+          }
+        }
       }
 
       window.__hot.forEach(fn => fn());

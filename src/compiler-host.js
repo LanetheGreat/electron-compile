@@ -1,6 +1,7 @@
 import mimeTypes from '@paulcbetts/mime-types';
 import fs from 'fs';
 import zlib from 'zlib';
+import crypto from 'crypto';
 import path from 'path';
 import {pfs, pzlib} from './promise';
 
@@ -382,8 +383,10 @@ export default class CompilerHost {
     let inputMimeType = mimeTypes.lookup(filePath);
 
     if (hashInfo.isFileBinary) {
+      const binaryData = hashInfo.binaryData || await pfs.readFile(filePath);
       return {
-        binaryData: hashInfo.binaryData || await pfs.readFile(filePath),
+        codeHash: crypto.createHash('sha1').update(binaryData).digest('hex'),
+        binaryData,
         mimeType: inputMimeType,
         dependentFiles: []
       };
@@ -394,13 +397,19 @@ export default class CompilerHost {
 
     if (!(await compiler.shouldCompileFile(code, ctx))) {
       d(`Compiler returned false for shouldCompileFile: ${filePath}`);
-      return { code, mimeType: mimeTypes.lookup(filePath), dependentFiles: [] };
+      return {
+        code,
+        codeHash: crypto.createHash('sha1').update(code).digest('hex'),
+        mimeType: mimeTypes.lookup(filePath),
+        dependentFiles: []
+      };
     }
 
     let dependentFiles = await compiler.determineDependentFiles(code, filePath, ctx);
 
     d(`Using compiler options: ${JSON.stringify(compiler.compilerOptions)}`);
     let result = await compiler.compile(code, filePath, ctx);
+    result.codeHash = crypto.createHash('sha1').update(result.code).digest('hex');
 
     let shouldInlineHtmlify =
       inputMimeType !== 'text/html' &&
@@ -686,8 +695,10 @@ export default class CompilerHost {
     let inputMimeType = mimeTypes.lookup(filePath);
 
     if (hashInfo.isFileBinary) {
+      const binaryData = hashInfo.binaryData || fs.readFileSync(filePath);
       return {
-        binaryData: hashInfo.binaryData || fs.readFileSync(filePath),
+        codeHash: crypto.createHash('sha1').update(binaryData).digest('hex'),
+        binaryData,
         mimeType: inputMimeType,
         dependentFiles: []
       };
@@ -698,12 +709,19 @@ export default class CompilerHost {
 
     if (!(compiler.shouldCompileFileSync(code, ctx))) {
       d(`Compiler returned false for shouldCompileFile: ${filePath}`);
-      return { code, mimeType: mimeTypes.lookup(filePath), dependentFiles: [] };
+      return {
+        code,
+        codeHash: crypto.createHash('sha1').update(code).digest('hex'),
+        mimeType: mimeTypes.lookup(filePath),
+        dependentFiles: []
+      };
     }
 
     let dependentFiles = compiler.determineDependentFilesSync(code, filePath, ctx);
 
+    d(`Using compiler options: ${JSON.stringify(compiler.compilerOptions)}`);
     let result = compiler.compileSync(code, filePath, ctx);
+    result.codeHash = crypto.createHash('sha1').update(result.code).digest('hex');
 
     let shouldInlineHtmlify =
       inputMimeType !== 'text/html' &&
