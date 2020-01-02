@@ -108,7 +108,7 @@ export default class CompileCache {
     let codeHash = null;
     let mimeType = null;
     let binaryData = null;
-    let dependentFiles = null;
+    let dependentFiles = [];
 
     let cacheFile = null;
     try {
@@ -136,7 +136,7 @@ export default class CompileCache {
       d(`Failed to read cache for ${filePath}, looked in ${cacheFile}: ${e.message}`);
     }
 
-    return { hashInfo, code, codeHash, mimeType, binaryData, dependentFiles };
+    return { hashInfo, code, codeHash, mimeType, binaryData, dependentFiles: dependentFiles || [] };
   }
 
 
@@ -249,7 +249,7 @@ export default class CompileCache {
     let codeHash = null;
     let mimeType = null;
     let binaryData = null;
-    let dependentFiles = null;
+    let dependentFiles = [];
 
     let cacheFile = null;
     try {
@@ -277,7 +277,7 @@ export default class CompileCache {
       d(`Failed to read cache for ${filePath}, looked in ${cacheFile}: ${e.message}`);
     }
 
-    return { hashInfo, code, codeHash, mimeType, binaryData, dependentFiles };
+    return { hashInfo, code, codeHash, mimeType, binaryData, dependentFiles: dependentFiles || [] };
   }
 
   saveSync(hashInfo, codeOrBinaryData, mimeType, dependentFiles) {

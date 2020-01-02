@@ -241,7 +241,8 @@ export default class CompilerHost {
     if (FileChangedCache.isInNodeModules(filePath)) {
       return {
         mimeType: type || 'application/javascript',
-        code: await pfs.readFile(filePath, 'utf8')
+        code: await pfs.readFile(filePath, 'utf8'),
+        dependentFiles: []
       };
     }
 
@@ -266,63 +267,19 @@ export default class CompilerHost {
     if (!compiler) {
       compiler = this.fallbackCompiler;
 
-      let { code, binaryData, mimeType } = await compiler.get(filePath);
-      return { code: code || binaryData, mimeType };
+      let { code, binaryData, mimeType, dependentFiles } = await compiler.get(filePath);
+      return { code: code || binaryData, mimeType, dependentFiles };
     }
 
     let cache = this.cachesForCompilers.get(compiler);
-    let {code, binaryData, mimeType} = await cache.get(filePath);
+    let {code, binaryData, mimeType, dependentFiles} = await cache.get(filePath);
 
     code = code || binaryData;
     if (!code || !mimeType) {
       throw new Error(`Asked to compile ${filePath} in production, is this file not precompiled?`);
     }
 
-    return { code, mimeType };
-  }
-
-  /**
-   * Handles tree-crawling for dependencies for file change notifications
-   * in read-write mode
-   *
-   * @private
-   */
-  async walkDependencies(filePath, depSet=new Set(), hashInfo, compiler) {
-    if (!hashInfo) {
-      d(`Caching dependency ${filePath}`);
-      hashInfo = await this.fileChangeCache.getHashForPath(filePath);
-    }
-
-    if (hashInfo.isInNodeModules) return depSet;
-
-    if (!compiler) {
-      compiler = CompilerHost.shouldPassthrough(hashInfo)
-        ? this.getPassthroughCompiler()
-        : this.compilersByMimeType[mimeTypes.lookup(filePath) || '__lolnothere'];
-    }
-
-    if (!compiler) {
-      d(`Falling back to passthrough compiler for ${filePath}`);
-      compiler = this.fallbackCompiler;
-    }
-
-    if (!compiler) {
-      throw new Error(`Couldn't find a compiler for ${filePath}`);
-    }
-
-    let dependencies = (await compiler.determineDependentFiles(
-      hashInfo.sourceCode || await pfs.readFile(filePath, 'utf8'),
-      filePath
-    )).filter((x) => x);
-
-    for(let dependency of dependencies) {
-      if (!depSet.has(dependency)) {
-        depSet.add(dependency);
-        await this.walkDependencies(dependency, depSet);
-      }
-    }
-
-    return depSet;
+    return { code, mimeType, dependentFiles };
   }
 
   /**
@@ -342,7 +299,7 @@ export default class CompilerHost {
     if (hashInfo.isInNodeModules) {
       let code = hashInfo.sourceCode || await pfs.readFile(filePath, 'utf8');
       code = await CompilerHost.fixNodeModulesSourceMapping(code, filePath, this.fileChangeCache.appRoot);
-      return { code, mimeType: type };
+      return { code, mimeType: type, dependentFiles: [] };
     }
 
     let compiler = CompilerHost.shouldPassthrough(hashInfo) ?
@@ -361,10 +318,7 @@ export default class CompilerHost {
     const cache = this.cachesForCompilers.get(compiler);
     let cacheHashInfo = await cache.getOrFetch(
       filePath,
-      async (filePath, hashInfo) => Object.assign(
-        this.compileUncached(filePath, hashInfo, compiler),
-        { dependentFiles: Array.from(await this.walkDependencies(filePath, new Set(), hashInfo, compiler)) }
-      )
+      async (filePath, hashInfo) => this.compileUncached(filePath, hashInfo, compiler)
     );
 
     for(let dependency of cacheHashInfo.dependentFiles) {
@@ -405,8 +359,6 @@ export default class CompilerHost {
       };
     }
 
-    let dependentFiles = await compiler.determineDependentFiles(code, filePath, ctx);
-
     d(`Using compiler options: ${JSON.stringify(compiler.compilerOptions)}`);
     let result = await compiler.compile(code, filePath, ctx);
     result.codeHash = crypto.createHash('sha1').update(result.code).digest('hex');
@@ -421,8 +373,10 @@ export default class CompilerHost {
       CompilerHost.shouldPassthrough(hashInfo);
 
     if ((finalForms[result.mimeType] && !shouldInlineHtmlify) || isPassthrough) {
-      // Got something we can use in-browser, let's return it
-      return Object.assign(result, {dependentFiles});
+      // Got something we can use in-browser, let's return it. (After renaming the dependency key)
+      result.dependentFiles = result.dependencies || [];
+      delete result.dependencies;
+      return result;
     } else {
       d(`Recursively compiling result of ${filePath} with non-final MIME type ${result.mimeType}, input was ${inputMimeType}`);
 
@@ -562,7 +516,8 @@ export default class CompilerHost {
     if (FileChangedCache.isInNodeModules(filePath)) {
       return {
         mimeType: type || 'application/javascript',
-        code: fs.readFileSync(filePath, 'utf8')
+        code: fs.readFileSync(filePath, 'utf8'),
+        dependentFiles: []
       };
     }
 
@@ -572,7 +527,8 @@ export default class CompilerHost {
     if (hashInfo.isInNodeModules) {
       return {
         mimeType: type,
-        code: hashInfo.sourceCode || fs.readFileSync(filePath, 'utf8')
+        code: hashInfo.sourceCode || fs.readFileSync(filePath, 'utf8'),
+        dependentFiles: []
       };
     }
 
@@ -594,57 +550,19 @@ export default class CompilerHost {
     if (!compiler) {
       compiler = this.fallbackCompiler;
 
-      let { code, binaryData, mimeType } = compiler.getSync(filePath);
-      return { code: code || binaryData, mimeType };
+      let { code, binaryData, mimeType, dependentFiles } = compiler.getSync(filePath);
+      return { code: code || binaryData, mimeType, dependentFiles };
     }
 
     let cache = this.cachesForCompilers.get(compiler);
-    let {code, binaryData, mimeType} = cache.getSync(filePath);
+    let {code, binaryData, mimeType, dependentFiles} = cache.getSync(filePath);
 
     code = code || binaryData;
     if (!code || !mimeType) {
       throw new Error(`Asked to compile ${filePath} in production, is this file not precompiled?`);
     }
 
-    return { code, mimeType };
-  }
-
-  walkDependenciesSync(filePath, depSet=new Set(), hashInfo, compiler) {
-    if (!hashInfo) {
-      d(`Caching dependency ${filePath}`);
-      hashInfo = this.fileChangeCache.getHashForPathSync(filePath);
-    }
-
-    if (hashInfo.isInNodeModules) return depSet;
-
-    if (!compiler) {
-      compiler = CompilerHost.shouldPassthrough(hashInfo)
-        ? this.getPassthroughCompiler()
-        : this.compilersByMimeType[mimeTypes.lookup(filePath) || '__lolnothere'];
-    }
-
-    if (!compiler) {
-      d(`Falling back to passthrough compiler for ${filePath}`);
-      compiler = this.fallbackCompiler;
-    }
-
-    if (!compiler) {
-      throw new Error(`Couldn't find a compiler for ${filePath}`);
-    }
-
-    let dependencies = compiler.determineDependentFilesSync(
-      hashInfo.sourceCode || fs.readFileSync(filePath, 'utf8'),
-      filePath
-    ).filter((x) => x);
-    
-    for(let dependency of dependencies) {
-      if (!depSet.has(dependency)) {
-        depSet.add(dependency);
-        this.walkDependenciesSync(dependency, depSet);
-      }
-    }
-
-    return depSet;
+    return { code, mimeType, dependentFiles };
   }
 
   fullCompileSync(filePath) {
@@ -659,7 +577,7 @@ export default class CompilerHost {
     if (hashInfo.isInNodeModules) {
       let code = hashInfo.sourceCode || fs.readFileSync(filePath, 'utf8');
       code = CompilerHost.fixNodeModulesSourceMappingSync(code, filePath, this.fileChangeCache.appRoot);
-      return { code, mimeType: type };
+      return { code, mimeType: type, dependentFiles: [] };
     }
 
     let compiler = CompilerHost.shouldPassthrough(hashInfo) ?
@@ -678,10 +596,7 @@ export default class CompilerHost {
     const cache = this.cachesForCompilers.get(compiler);
     let cacheHashInfo = cache.getOrFetchSync(
       filePath,
-      (filePath, hashInfo) => Object.assign(
-        this.compileUncachedSync(filePath, hashInfo, compiler),
-        { dependentFiles: Array.from(this.walkDependenciesSync(filePath, new Set(), hashInfo, compiler)) }
-      )
+      (filePath, hashInfo) => this.compileUncachedSync(filePath, hashInfo, compiler)
     );
 
     for(let dependency of cacheHashInfo.dependentFiles) {
@@ -717,8 +632,6 @@ export default class CompilerHost {
       };
     }
 
-    let dependentFiles = compiler.determineDependentFilesSync(code, filePath, ctx);
-
     d(`Using compiler options: ${JSON.stringify(compiler.compilerOptions)}`);
     let result = compiler.compileSync(code, filePath, ctx);
     result.codeHash = crypto.createHash('sha1').update(result.code).digest('hex');
@@ -733,8 +646,10 @@ export default class CompilerHost {
       CompilerHost.shouldPassthrough(hashInfo);
 
     if ((finalForms[result.mimeType] && !shouldInlineHtmlify) || isPassthrough) {
-      // Got something we can use in-browser, let's return it
-      return Object.assign(result, {dependentFiles});
+      // Got something we can use in-browser, let's return it. (After renaming the dependency key)
+      result.dependentFiles = result.dependencies || [];
+      delete result.dependencies;
+      return result;
     } else {
       d(`Recursively compiling result of ${filePath} with non-final MIME type ${result.mimeType}, input was ${inputMimeType}`);
 
