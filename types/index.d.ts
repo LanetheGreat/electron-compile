@@ -47,6 +47,7 @@ export declare class CompilerHost {
     compile(filePath: string): {
         hashinfo: {},
         code: string,
+        codeHash: string,
         binaryData: Buffer;
         mimeType: string;
         dependentFiles: string[];
@@ -105,6 +106,8 @@ export declare function init(appRoot: string, mainModule: string, productionMode
 export declare function initializeGlobalHooks(compilerHost: CompilerHost): void;
 
 export declare function initializeProtocolHook(compilerHost: CompilerHost): void;
+
+export declare function hookHotModuleReloader(compilerHost: CompilerHost): void;
 
 export declare function registerRequireExtension(compilerHost: CompilerHost): void;
 

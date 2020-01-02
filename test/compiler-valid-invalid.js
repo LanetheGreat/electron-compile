@@ -71,17 +71,6 @@ for (let mimeType of mimeTypesToTest) {
   let klass = global.compilersByMimeType[mimeType];
 
   describe(`The ${klass.name} class for ${mimeType}`, function() {
-
-    /* Remove sass.js's "unhandledRejection" event listener (abort function),
-     because it leads to Promise rejections causing "uncaughtException"
-     error handling that kills mocha mid-testing. */
-    before(function() {
-      for(let listener of process.listeners('unhandledRejection')) {
-        if(listener.name === 'abort')
-          process.removeListener('unhandledRejection', listener);
-      }
-    });
-
     beforeEach(function() {
       if ('createFromCompilers' in klass) {
         let innerCompilers = Object.keys(global.compilersByMimeType).reduce((acc, x) => {
